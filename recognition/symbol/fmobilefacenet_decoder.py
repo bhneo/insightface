@@ -91,7 +91,7 @@ def Residual(data, num_block=1, num_out=1, kernel=(3, 3), stride=(1, 1), pad=(1,
 #     fc1 = symbol_utils.get_fc1(conv_6_sep, num_classes, fc_type)
 #     return fc1
 
-SHAPE = False
+SHAPE = True
 def infer_shape(sym):
     if SHAPE:
         _, sym_shape, _ = sym.infer_shape(data=(1, 3, 112, 112))
@@ -102,7 +102,7 @@ def infer_shape(sym):
 def get_symbol(inputs):
     print('decoder')
     blocks = config.net_blocks
-    all_shape,inputs_shape,_ = inputs.infer_shape(data=(1, 3, 112, 112))
+    inputs_shape = infer_shape(inputs)
     de_linear_1 = DeLinear(data=inputs, num_filter=512, kernel=(7,7),num_group=512,stride=(1,1),pad=(0,0),name='de_linear_1')
     de_linear_1_shape = infer_shape(de_linear_1)
 
