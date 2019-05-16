@@ -16,6 +16,7 @@ config.net_blocks = [1,4,6,2]
 config.net_output = 'E'
 config.net_multiplier = 1.0
 config.val_targets = ['lfw', 'cfp_fp', 'agedb_30']
+config.test_sets = ['lfw', 'cfp_fp', 'agedb_30', 'calfw', 'cfp_ff', 'cplfw', 'vgg2_fp']
 config.ce_loss = True
 config.fc7_lr_mult = 1.0
 config.fc7_wd_mult = 1.0
