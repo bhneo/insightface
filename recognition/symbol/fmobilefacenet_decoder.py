@@ -102,8 +102,8 @@ def infer_shape(sym):
 def get_symbol(inputs):
     print('decoder')
     blocks = config.net_blocks
-    inputs_shape = infer_shape(inputs)
-    de_linear_1 = DeLinear(data=inputs, num_filter=512, kernel=(7,7),num_group=512,stride=(1,1),pad=(0,0),name='de_linear_1')
+    all_shape,inputs_shape,_ = inputs.infer_shape(data=(1, 3, 112, 112))
+    de_linear_1 = DeLinear(data=inputs, num_filter=512, kernel=(7,7),num_group=512,stride=(1,1),target_shape=(7,7),name='de_linear_1')
     de_linear_1_shape = infer_shape(de_linear_1)
 
     deconv_6sep = Conv(de_linear_1, num_filter=128, kernel=(1, 1), pad=(0, 0), stride=(1, 1), name="deconv_6sep")
