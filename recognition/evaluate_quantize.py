@@ -112,7 +112,7 @@ def eval_net(args):
         print('[%s]Accuracy-Flip: %1.5f+-%1.5f' % (ver_name_list[i], acc2, std2))
 
 
-def test(data_set, mx_model1, mx_model2, batch_size, nfolds=10):
+def test(data_set, mx_model1, mx_model2, batch_size, nfolds=10, quantize_bits=8):
     print('testing verification..')
     data_list = data_set[0]
     issame_list = data_set[1]
@@ -130,7 +130,8 @@ def test(data_set, mx_model1, mx_model2, batch_size, nfolds=10):
             mx_model1.forward(db, is_train=False)
             net_out = mx_model1.get_outputs()
             _embeddings = net_out[0].asnumpy()
-
+            quantized_embeddings, maximums, minimums = quantize_embeddings(_embeddings, bits=quantize_bits)
+            _embeddings = dequantize_embeddings(quantized_embeddings, maximums, minimums, quantize_bits)
             if embeddings is None:
                 embeddings = np.zeros( (data.shape[0], _embeddings.shape[1]) )
             embeddings[ba:bb,:] = _embeddings[(batch_size-count):,:]
@@ -158,7 +159,44 @@ def test(data_set, mx_model1, mx_model2, batch_size, nfolds=10):
     return acc1, std1, acc2, std2, _xnorm, embeddings_list
 
 
+def quantize(embedding, maximum=None, minimum=None, bits=8):
+    if maximum==None:
+        maximum = np.max(embedding, -1)
+    if minimum==None:
+        minimum = np.min(embedding, -1)
+    quantum = (maximum-minimum)/(np.power(2, bits))
+    quantized_embedding = []
+    for element in embedding:
+        quantized_embedding.append(int((element-minimum) // quantum))
+    return quantized_embedding, maximum, minimum, quantum
 
+
+def dequantize(quantized_embedding, maximum, minimum, bits):
+    quantum = (maximum-minimum)/(np.power(2, bits))
+    embedding = []
+    for element in quantized_embedding:
+        embedding.append(quantum*element+minimum)
+    return embedding
+
+
+def quantize_embeddings(embeddings, maximum=None, minimum=None, bits=8):
+    quantized_embeddings = []
+    maximums = []
+    minimums = []
+    for i in range(len(embeddings)):
+        quantized_embedding, maximum, minimum, quantum = quantize(embeddings[i], maximum, minimum, bits)
+        quantized_embeddings.append(quantized_embedding)
+        maximums.append(maximum)
+        minimums.append(minimum)
+    return quantized_embeddings, maximums, minimums
+
+
+def dequantize_embeddings(quantized_embeddings, maximums, minimums, bits):
+    assert len(quantized_embeddings) == len(maximums) and len(maximums) == len(minimums)
+    embeddings=[]
+    for i in range(len(maximums)):
+        embeddings.append(dequantize(quantized_embeddings[i], maximums[i], minimums[i], bits))
+    return embeddings
 
 
 def main():
