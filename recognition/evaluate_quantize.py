@@ -99,6 +99,7 @@ def eval_net(args):
     ver_list = []
     ver_name_list = []
     for name in config.test_sets:
+    # for name in ['lfw']:
         path = os.path.join(data_dir,name+".bin")
         if os.path.exists(path):
             data_set = verification.load_bin(path, image_size)
@@ -107,12 +108,12 @@ def eval_net(args):
             print('ver', name)
 
     for i in range(len(ver_list)):
-        acc1, std1, acc2, std2, xnorm, embeddings_list = test(ver_list[i], model_512, model_map, args.batch_size, 10)
+        acc1, std1, acc2, std2, xnorm, embeddings_list = run_test(ver_list[i], model_512, model_map, args.batch_size, 10, 16)
         print('[%s]XNorm: %f' % (ver_name_list[i], xnorm))
         print('[%s]Accuracy-Flip: %1.5f+-%1.5f' % (ver_name_list[i], acc2, std2))
 
 
-def test(data_set, mx_model1, mx_model2, batch_size, nfolds=10, quantize_bits=8):
+def run_test(data_set, mx_model1, mx_model2, batch_size, nfolds=10, quantize_bits=8):
     print('testing verification..')
     data_list = data_set[0]
     issame_list = data_set[1]
@@ -129,9 +130,14 @@ def test(data_set, mx_model1, mx_model2, batch_size, nfolds=10, quantize_bits=8)
             db = mx.io.DataBatch(data=(_data,), label=(_label,))
             mx_model1.forward(db, is_train=False)
             net_out = mx_model1.get_outputs()
-            _embeddings = net_out[0].asnumpy()
+            _embeddings = net_out[0].asnumpy().reshape((-1, 512))
             quantized_embeddings, maximums, minimums = quantize_embeddings(_embeddings, bits=quantize_bits)
             _embeddings = dequantize_embeddings(quantized_embeddings, maximums, minimums, quantize_bits)
+            db = mx.io.DataBatch(data=(nd.array(_embeddings),), label=(_label,))
+            mx_model2.forward(db, is_train=False)
+            net_out = mx_model2.get_outputs()
+            _embeddings = net_out[0].asnumpy()
+
             if embeddings is None:
                 embeddings = np.zeros( (data.shape[0], _embeddings.shape[1]) )
             embeddings[ba:bb,:] = _embeddings[(batch_size-count):,:]
