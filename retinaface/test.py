@@ -7,14 +7,14 @@ import glob
 from retinaface import RetinaFace
 
 thresh = 0.8
-scales = [480, 640]
+scales = [1024, 1980]
 
-count = 10
+count = 1
 
 gpuid = 0
 detector = RetinaFace('./model/R50', 0, gpuid, 'net3')
 
-img = cv2.imread(sys.argv[1])
+img = cv2.imread('t1.jpg')
 print(img.shape)
 im_shape = img.shape
 target_size = scales[0]
@@ -30,8 +30,11 @@ if np.round(im_scale * im_size_max) > max_size:
 
 print('im_scale', im_scale)
 
+scales = [im_scale]
+flip = False
+
 for c in range(count):
-  faces, landmarks = detector.detect(img, thresh, scales=[im_scale])
+  faces, landmarks = detector.detect(img, thresh, scales=scales, do_flip=flip)
   print(c, faces.shape, landmarks.shape)
 
 if faces is not None:
