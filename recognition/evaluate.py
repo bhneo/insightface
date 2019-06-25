@@ -78,6 +78,17 @@ def eval_net(args):
 
     print('loading', args.pretrained, args.pretrained_epoch)
     sym, arg_params, aux_params = mx.model.load_checkpoint(args.pretrained, args.pretrained_epoch)
+    arg_num = 0
+    for k in arg_params:
+        param = arg_params[k]
+        print(k, np.prod(param.shape))
+        arg_num += np.prod(param.shape)
+    print('arg num:', arg_num)
+    aux_num = 0
+    for k in aux_params:
+        param = aux_params[k]
+        aux_num += np.prod(param.shape)
+    print('aux num:', aux_num)
 
     if config.count_flops:
         all_layers = sym.get_internals()
